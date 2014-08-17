@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 )
@@ -27,5 +28,5 @@ func handler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	http.ListenAndServe(*bind, http.HandlerFunc(handler))
+	log.Fatalln(http.ListenAndServe(*bind, http.HandlerFunc(handler)))
 }
