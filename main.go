@@ -6,25 +6,34 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"runtime"
 )
 
 var (
-	bind = flag.String("bind", ":8080", "HTTP listener address")
+	bind = flag.String("bind", ":80", "HTTP listener address")
+	xff  = flag.Bool("xff", false, "expose X-Forwarded-For")
 )
 
 func init() {
 	flag.Parse()
+	if os.Getenv("GOMAXPROCS") == "" {
+		runtime.GOMAXPROCS(runtime.NumCPU())
+	}
 }
 
 func handler(rw http.ResponseWriter, req *http.Request) {
-	host, _, _ := net.SplitHostPort(req.RemoteAddr)
-	xff := req.Header.Get("X-Forwarded-For")
 	rw.Header().Set("Content-Type", "text/plain")
-	if len(xff) > 0 {
-		fmt.Fprintf(rw, "%s, %s\n", xff, host)
-	} else {
+	host, _, _ := net.SplitHostPort(req.RemoteAddr)
+	if !*xff {
 		fmt.Fprintf(rw, "%s\n", host)
+		return
 	}
+	v := req.Header.Get("X-Forwarded-For")
+	if len(v) > 0 {
+		v += ", "
+	}
+	fmt.Fprintf(rw, "%s%s\n", v, host)
 }
 
 func main() {
